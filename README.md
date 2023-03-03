@@ -2,6 +2,9 @@
 
 CC UEM 2023 - Sistemas Digitais
 
+Vinícius Kenzo Fukace - RA115672
+Guilherme Panobianco Ferrari - RA112679
+
 Desenvolva um Balanceador de Carga que receba conexões e seja capaz de enviar o tráfego para três diferentes servidores (S1, S2 e S3). Dois algoritmos devem ser implementados:
 
 1. Round Robin padrão

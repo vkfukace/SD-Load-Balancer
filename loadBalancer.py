@@ -1,3 +1,6 @@
+# Vinícius Kenzo Fukace - RA115672
+# Guilherme Panobianco Ferrari - RA112679
+
 import socket
 import select
 
