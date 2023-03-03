@@ -81,8 +81,13 @@ def main():
 
                 # Choose a server to forward the connection to
                 serverAddr, serverPort = TCP_SERVER
-                server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                server_sock.connect((serverAddr, serverPort))
+                if not servertest(serverAddr, serverPort, socket.SOCK_STREAM):
+                    client_sock.sendall(f'Erro ao conectar no servidor {serverAddr}:{serverPort}'.encode('utf-8'))
+                    client_sock.close()
+                    continue
+                else:
+                    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    server_sock.connect((serverAddr, serverPort))
 
                 # Forward the connection
                 print(f"Forwarding TCP connection to {serverAddr}:{serverPort}\n")
