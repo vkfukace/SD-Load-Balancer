@@ -9,3 +9,11 @@ Desenvolva um Balanceador de Carga que receba conexões e seja capaz de enviar o
 Para a execução do Balanceador de carga, deve ser passado um parâmetro numérico para a escolha do algoritmo.
 
 Pode ser feito em duplas.
+
+## Execução
+ - python3 server1.py 1 : Inicia servidor 1 como TCP
+ - python3 server2.py 2 : Inicia servidor 2 como UDP
+ - python3 server3.py 2 : Inicia servidor 3 como UDP
+ - python3 loadBalancer.py : Inicia o Load Balancer
+ - python3 client.py 1 : Envia uma mensagem TCP para o Load Balancer
+ - python3 client.py 2 : Envia uma mensagem UDP para o Load Balancer
