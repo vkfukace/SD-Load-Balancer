@@ -5,8 +5,7 @@ HOST = 'localhost'
 TCP_PORT = 8080
 UDP_PORT = 8081
 
-TCP_SERVER = ('localhost', 60001)
-UDP_SERVER_POOL = [('localhost', 60002), ('localhost', 60003)]
+SERVER_POOL = [('localhost', 60001), ('localhost', 60002), ('localhost', 60003)]
 CURRENT_SERVER = 0
 
 # Retorna True se o servidor estiver ativo, False caso contrário
@@ -38,21 +37,34 @@ def servertest(host, port, protocol):
     else:
         return False
 
+
 # Retorna o índice do próximo servidor disponível
-def nextServer():
-    global UDP_SERVER_POOL, CURRENT_SERVER
-    nextServer = (CURRENT_SERVER + 1) % len(UDP_SERVER_POOL)
+# Caso não haja servidor disponível, retorna -1
+def getNextServer(protocol):
+    global SERVER_POOL, CURRENT_SERVER
+    nextServer = (CURRENT_SERVER + 1) % len(SERVER_POOL)
+
+    # passa sequencialmente pelos servidores até achar um que funcione
     while nextServer != CURRENT_SERVER:
-        nextServerAddr, nextServerPort = UDP_SERVER_POOL[nextServer]
+        nextServerAddr, nextServerPort = SERVER_POOL[nextServer]
         # se o servidor estiver disponível
-        if(servertest(nextServerAddr, nextServerPort, socket.SOCK_DGRAM)):
+        if(servertest(nextServerAddr, nextServerPort, protocol)):
             return nextServer
         else:
-            nextServer = (nextServer + 1) % len(UDP_SERVER_POOL)
-    return CURRENT_SERVER
+            nextServer = (nextServer + 1) % len(SERVER_POOL)
+
+    # Neste caso, já passou por todos os servidores e voltou para o primeiro
+    # se o primeiro não estiver disponível, nenhum está disponível
+    nextServer = (nextServer + 1) % len(SERVER_POOL)
+    nextServerAddr, nextServerPort = SERVER_POOL[nextServer]
+    if (servertest(nextServerAddr, nextServerPort, socket.SOCK_DGRAM)):
+        return CURRENT_SERVER
+    else:
+        return -1
+
 
 def main():
-    global HOST, TCP_PORT, UDP_PORT, UDP_SERVER_POOL, CURRENT_SERVER, TCP_SERVER
+    global HOST, TCP_PORT, UDP_PORT, SERVER_POOL, CURRENT_SERVER
 
     # Cria socket TCP
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,23 +86,25 @@ def main():
         readable, _, _ = select.select(input_sockets, [], [])
 
         for sock in readable:
-            # Se o socket for TCP, aceita a conexão e envia para o servidor 1
+            # Socket TCP
             if sock == tcp_sock:
                 client_sock, client_addr = sock.accept()
                 print(f"Received TCP connection from {client_addr}")
 
                 # Choose a server to forward the connection to
-                serverAddr, serverPort = TCP_SERVER
-                if not servertest(serverAddr, serverPort, socket.SOCK_STREAM):
-                    client_sock.sendall(f'Erro ao conectar no servidor {serverAddr}:{serverPort}'.encode('utf-8'))
+                nextServer = getNextServer(socket.SOCK_STREAM)
+                if nextServer == -1:
+                    print('Sem servidores TCP disponiveis\n')
+                    client_sock.sendall(b'Sem servidores TCP disponiveis')
                     client_sock.close()
                     continue
-                else:
-                    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    server_sock.connect((serverAddr, serverPort))
+                CURRENT_SERVER = nextServer
+                serverAddr, serverPort = SERVER_POOL[CURRENT_SERVER]
 
                 # Forward the connection
                 print(f"Forwarding TCP connection to {serverAddr}:{serverPort}\n")
+                server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server_sock.connect((serverAddr, serverPort))
                 server_sock.sendall(client_sock.recv(1024))
                 client_sock.sendall(server_sock.recv(1024))
 
@@ -98,17 +112,19 @@ def main():
                 client_sock.close()
                 server_sock.close()
 
-            # Se o socket for UDP, faz Round Robin entre servidor 2 e servidor 3
+            # Socket UDP
             elif sock == udp_sock:
                 data, addr = udp_sock.recvfrom(1024)
                 print(f"Received UDP message from {addr}")
 
                 # Choose a server to forward the message to
-                serverAddr, serverPort = UDP_SERVER_POOL[CURRENT_SERVER]
-                CURRENT_SERVER = nextServer()
-                if not servertest(serverAddr, serverPort, socket.SOCK_DGRAM):
-                    serverAddr, serverPort = UDP_SERVER_POOL[CURRENT_SERVER]
-                    CURRENT_SERVER = nextServer()
+                nextServer = getNextServer(socket.SOCK_DGRAM)
+                if nextServer == -1:
+                    print('Sem servidores UDP disponiveis\n')
+                    udp_sock.sendto(b'Sem servidores UDP disponiveis', addr)
+                    continue
+                CURRENT_SERVER = nextServer
+                serverAddr, serverPort = SERVER_POOL[CURRENT_SERVER]
 
                 # Forward the connection
                 print(f"Forwarding UDP connection to {serverAddr}:{serverPort}\n")
@@ -118,6 +134,7 @@ def main():
 
                 # Close the connection
                 server_sock.close()
+
 
 if __name__ == '__main__':
     main()
