@@ -52,7 +52,7 @@ def nextServer():
     return CURRENT_SERVER
 
 def main():
-    global HOST, TCP_PORT, UDP_PORT, UDP_SERVER_POOL, CURRENT_SERVER, CURRENT_TCP_SERVER, TCP_SERVER
+    global HOST, TCP_PORT, UDP_PORT, UDP_SERVER_POOL, CURRENT_SERVER, TCP_SERVER
 
     # Cria socket TCP
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
