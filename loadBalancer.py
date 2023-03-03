@@ -44,7 +44,7 @@ def getNextServer(protocol):
     global SERVER_POOL, CURRENT_SERVER
     nextServer = (CURRENT_SERVER + 1) % len(SERVER_POOL)
 
-    # passa sequencialmente pelos servidores até achar um que funcione
+    # passa sequencialmente pelos próximos servidores até achar um que funcione
     while nextServer != CURRENT_SERVER:
         nextServerAddr, nextServerPort = SERVER_POOL[nextServer]
         # se o servidor estiver disponível
